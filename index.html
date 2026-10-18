@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¿Quién maneja hoy? 🚗</title>
+    <style>
+        :root {
+            --bg-color: #121214;
+            --card-bg: #202024;
+            --primary: #00b37e;
+            --primary-hover: #00875f;
+            --danger: #f75a68;
+            --text: #e1e1e6;
+            --text-muted: #8d8d99;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            text-align: center;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #323238;
+            background-color: #121214;
+            color: var(--text);
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        ul {
+            list-style: none;
+            max-height: 150px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        li {
+            background-color: #121214;
+            padding: 10px 14px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+        }
+
+        .delete-btn {
+            background: none;
+            color: var(--danger);
+            border: none;
+            padding: 4px 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .delete-btn:hover {
+            opacity: 0.8;
+        }
+
+        .btn-sortear {
+            width: 100%;
+            padding: 16px;
+            font-size: 1.1rem;
+            background-color: #fba94c;
+            color: #121214;
+        }
+
+        .btn-sortear:hover {
+            background-color: #e09238;
+        }
+
+        .result-card {
+            text-align: center;
+            padding: 24px;
+            background: linear-gradient(135deg, #00b37e22, #202024);
+            border: 2px dashed var(--primary);
+            display: none;
+        }
+
+        .result-card h2 {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        #winner-name {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary);
+            word-break: break-word;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🚗 Chófer Designado</h1>
+
+        <!-- Tarjeta de Ingreso -->
+        <div class="card">
+            <div class="input-group">
+                <input type="text" id="name-input" placeholder="Nombre del amigo..." autocomplete="off">
+                <button id="add-btn">Agregar</button>
+            </div>
+            <ul id="names-list">
+                <!-- Los nombres se cargan acá -->
+            </ul>
+        </div>
+
+        <!-- Botón de Sorteo -->
+        <button class="btn-sortear" id="sort-btn" disabled>¡Sortear Conductor!</button>
+
+        <!-- Tarjeta de Resultado -->
+        <div class="card result-card" id="result-container">
+            <h2>¡El conductor designado es:</h2>
+            <div id="winner-name">-</div>
+        </div>
+    </div>
+
+    <script>
+        const nameInput = document.getElementById('name-input');
+        const addBtn = document.getElementById('add-btn');
+        const namesList = document.getElementById('names-list');
+        const sortBtn = document.getElementById('sort-btn');
+        const resultContainer = document.getElementById('result-container');
+        const winnerNameEl = document.getElementById('winner-name');
+
+        let names = [];
+
+        function updateUI() {
+            namesList.innerHTML = '';
+            names.forEach((name, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${name}</span>
+                    <button class="delete-btn" onclick="removeName(${index})">❌</button>
+                `;
+                namesList.appendChild(li);
+            });
+
+            // Habilitar o deshabilitar botón de sortear según si hay al menos 2 personas
+            sortBtn.disabled = names.length < 2;
+        }
+
+        function addName() {
+            const name = nameInput.value.trim();
+            if (name !== '' && !names.includes(name)) {
+                names.push(name);
+                nameInput.value = '';
+                updateUI();
+                resultContainer.style.display = 'none';
+            }
+            nameInput.focus();
+        }
+
+        window.removeName = function(index) {
+            names.splice(index, 1);
+            updateUI();
+            resultContainer.style.display = 'none';
+        }
+
+        addBtn.addEventListener('click', addName);
+        nameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addName();
+        });
+
+        sortBtn.addEventListener('click', () => {
+            if (names.length < 2) return;
+
+            sortBtn.disabled = true;
+            resultContainer.style.display = 'block';
+            winnerNameEl.style.color = '#fba94c'; // Color de suspenso
+
+            let counter = 0;
+            const maxCount = 15; // Cuántas veces cambia antes de parar
+            const intervalTime = 100; // Velocidad del parpadeo
+
+            const suspenseInterval = setInterval(() => {
+                // Mostrar nombres al azar durante la animación
+                const randomIndex = Math.floor(Math.random() * names.length);
+                winnerNameEl.textContent = names[randomIndex];
+                counter++;
+
+                if (counter >= maxCount) {
+                    clearInterval(suspenseInterval);
+                    // Elección final real
+                    const finalWinnerIndex = Math.floor(Math.random() * names.length);
+                    winnerNameEl.textContent = names[finalWinnerIndex];
+                    winnerNameEl.style.color = 'var(--primary)'; // Color ganador definitivo
+                    sortBtn.disabled = false;
+                }
+            }, intervalTime);
+        });
+    </script>
+</body>
+</html>
